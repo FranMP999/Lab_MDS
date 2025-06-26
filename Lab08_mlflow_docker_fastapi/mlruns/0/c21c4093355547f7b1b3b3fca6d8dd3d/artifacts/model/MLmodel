@@ -1,0 +1,33 @@
+artifact_path: model
+flavors:
+  python_function:
+    data: model.xgb
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.13.3
+  xgboost:
+    code: null
+    data: model.xgb
+    model_class: xgboost.sklearn.XGBClassifier
+    model_format: xgb
+    xgb_version: 3.0.0
+is_signature_from_type_hint: false
+mlflow_version: 2.22.0
+model_size_bytes: 2434914
+model_uuid: 951d5d9f65674d8a97cfc5014d7ec6dd
+prompts: null
+run_id: c21c4093355547f7b1b3b3fca6d8dd3d
+signature:
+  inputs: '[{"type": "double", "name": "ph", "required": true}, {"type": "double",
+    "name": "Hardness", "required": true}, {"type": "double", "name": "Solids", "required":
+    true}, {"type": "double", "name": "Chloramines", "required": true}, {"type": "double",
+    "name": "Sulfate", "required": true}, {"type": "double", "name": "Conductivity",
+    "required": true}, {"type": "double", "name": "Organic_carbon", "required": true},
+    {"type": "double", "name": "Trihalomethanes", "required": true}, {"type": "double",
+    "name": "Turbidity", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-06-06 20:41:56.692696'

@@ -1,0 +1,1 @@
+XGB con params = {'n_estimators': 892, 'max_depth': 10, 'max_leaves': 27, 'min_child_weight': 3, 'learning_rate': 0.0884604245001039, 'reg_alpha': 0.740493562820371, 'reg_lambda': 0.9003303797063471}

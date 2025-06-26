@@ -1,0 +1,573 @@
+---
+jupyter: lab_env
+---
+
+<h1><center>Laboratorio 3: La desperación de Mr. Cheems 🐼</center></h1>
+
+<center><strong>MDS7202: Laboratorio de Programación Científica para Ciencia de Datos - Otoño 2025</strong></center>
+
+### Cuerpo Docente:
+
+- Profesores: Stefano Schiappacasse, Sebastián Tinoco
+- Auxiliares: Melanie Peña, Valentina Rojas
+- Ayudantes: Angelo Muñoz, Valentina Zúñiga
+
+### Equipo: SUPER IMPORTANTE - notebooks sin nombre no serán revisados
+
+- Nombre de alumno 1: Francisco Maldonado
+- Nombre de alumno 2:
+
+### **Link de repositorio de GitHub:** [Repositorio](https://github.com/FranMP999/)
+
+## Temas a tratar
+- Aplicar Pandas para obtener características de un DataFrame.
+- Aplicar Pipelines y Column Transformers
+
+## Reglas:
+
+- **Grupos de 2 personas**
+- Fecha de entrega: 6 días de plazo con descuento de 1 punto por día. Entregas Martes a las 23:59.
+- Instrucciones del lab el viernes a las 16:15 en formato online. Asistencia no es obligatoria, pero se recomienda fuertemente asistir.
+- <u>Prohibidas las copias</u>. Cualquier intento de copia será debidamente penalizado con el reglamento de la escuela.
+- Tienen que subir el laboratorio a u-cursos y a su repositorio de github. Labs que no estén en u-cursos no serán revisados. Recuerden que el repositorio también tiene nota.
+- Cualquier duda fuera del horario de clases al foro. Mensajes al equipo docente serán respondidos por este medio.
+- Pueden usar cualquier material del curso que estimen conveniente.
+
+### Objetivos principales del laboratorio
+- Comprender cómo aplicar pipelines de Scikit-Learn para generar procesos más limpios en Feature Engineering.
+
+El laboratorio deberá ser desarrollado sin el uso indiscriminado de iteradores nativos de python (aka "for", "while"). La idea es que aprendan a exprimir al máximo las funciones optimizadas que nos entrega `numpy`, las cuales vale mencionar, son bastante más eficientes que los iteradores nativos sobre arreglos (*o tensores*).
+
+## Descripción del laboratorio.
+
+### Importamos librerias utiles 😸
+
+```{python}
+#| ExecuteTime: {end_time: '2021-03-29T00:08:16.884674Z', start_time: '2021-03-29T00:08:16.349846Z'}
+#| cell_id: 67b4b29f0e6b48719b58d579276f2b19
+#| deepnote_cell_height: 514.13330078125
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 8517
+#| execution_start: 1635469788590
+#| source_hash: a3741fd5
+# Libreria Core del lab.
+import numpy as np
+import pandas as pd
+import datetime
+from IPython.display import HTML
+
+# Libreria para plotear (En colab esta desactualizado plotly)
+#!pip install --upgrade plotly
+import plotly.express as px
+import plotly.graph_objects as go
+
+# Librerias utiles
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.impute import SimpleImputer, KNNImputer
+```
+
+```{python}
+#| cell_id: ce6a19ec6fc6486e832760ac3740d7ef
+#| deepnote_cell_height: 219.46665954589844
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 7
+#| execution_start: 1635165625274
+#| source_hash: c60dc4a7
+# Si usted está utilizando Colabolatory le puede ser útil este código para cargar los archivos.
+try:
+    from google.colab import drive
+    drive.mount("/content/drive")
+    path = 'Dirección donde tiene los archivos en el Drive'
+except:
+    print('Ignorando conexión drive-colab')
+```
+
+```{python}
+pip install pyarrow
+```
+
+# Feature engineering en datos de retail 🛍️
+
+### 0. Cargar Dataset
+
+<p align="center">
+  <img width=300 src="https://s1.eestatic.com/2018/04/14/social/la_jungla_-_social_299733421_73842361_854x640.jpg">
+</p>
+
+Mr. Cheems, gerente de una cotizada tienda de retail en Europa, les solicita si pueden analizar los datos de algunas de sus tiendas. En una reunión, Mr Cheems le comenta que la calidad de sus datos no es muy buena, por lo que le solicita a usted que limpie su base de datos y cree nuevos atributos relevantes para el negocio.
+
+Por ello, el área de ventas les entrega archivo llamado `online_retail_data.pickle` el cual usted decide cargar a continuación.
+
+```{python}
+#| cell_id: 4d7d0f0855744e6c9d5a2198e5dcd690
+#| colab: {base_uri: 'https://localhost:8080/', height: 204}
+#| deepnote_cell_height: 489.79998779296875
+#| deepnote_cell_type: code
+#| deepnote_output_heights: [177]
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 466
+#| execution_start: 1635469797118
+#| source_hash: d52b246c
+# Inserte su código aquí
+df_retail = pd.read_pickle("online_retail_data.pickle")
+df_retail.head()
+```
+
+### 1. Función para explorar características [0.5 puntos]
+
+<p align="center">
+  <img width=300 src="https://editor.analyticsvidhya.com/uploads/47389meme.png">
+</p>
+
+
+
+Tras inspeccionar brevemente los datos proporcionados, usted decide crear una función que realice lo siguiente:
+- Plotee un histograma para las variables precios y cantidad. [0.3 puntos]
+- Imprima un conteo de datos nulos por variable [0.2 puntos]
+
+**Nota**: Para generar los gráficos no es obligatorio el uso de `plotly`, pero si es altamente recomendado. Pueden encontrar más información de esta librería en este [enlace](https://plotly.com/python/).
+
+**Respuesta:**
+
+```{python}
+#Añadir comentario simple del gráfico
+def explore_data(dataframe_in, columns = ["Price", "Quantity"], log=False):
+    try:
+        for column in columns:
+            fig = px.histogram(dataframe_in, x=column, log_y=log)
+            fig.show()
+    except:
+        print("Las columnas no corresponden al DataFrame")
+    print(f"Conteo de datos nulos por variable:\n{dataframe_in.isna().sum()}")
+```
+
+```{python}
+#| scrolled: true
+explore_data(df_retail, log=True)
+```
+
+**Observación**: Podemos observar de los gráficos que tanto en cantidad de pedido como en precio existe una gran concentración de los valores en un rango acotado, bajo el 1000, con una baja cantidad de outliers que toman valores exorbitantes.
+
+### 2. Eliminando outliers [1.0 puntos]
+
+<p align="center">
+  <img width=300 src="https://media.licdn.com/dms/image/C5612AQGdXKCka7HumA/article-cover_image-shrink_600_2000/0/1520056407281?e=2147483647&v=beta&t=VZcfjjzjK4LxXdZkSu1KisWC0Ry8bk4tPCn3R8aYdNM">
+</p>
+
+
+
+#### 2.1 Creando la clase IQR [0.5 puntos]
+
+Entre las falencias de los datos, Mr. Cheems le comenta que a veces los operadores no ingresan el precio correcto de los productos. Mr. Cheems le comenta que se dio cuenta de este fenómeno porque hay productos con precios exagerádamente altos o bajos. Por lo cual usted decide eliminar outliers del dataframe a traves del rango intercuartil el cual cuenta con los siguientes pasos:
+
+1. Calcular el primer cuartil $Q1$ y el tercer cuartil $Q3$. Hint: utilice el método `quantile()`
+
+2. Calcular el rango intercuartil (RIC): $RIC = Q3 - Q1$
+
+3. Calcular los límites para identificar outliers:
+ - Límite inferior: $~~Q1 - \lambda \cdot RIC$
+ - Límite superior: $~~Q3 + \lambda \cdot RIC$
+
+4. Eliminar outliers: Los outliers son los datos que están por debajo del límite inferior o por encima del límite superior.
+
+
+Para realizar dicha tarea, usted decide crear una clase llamada `IQR()` utilizando `BaseEstimator` y `TransformerMixin` para realizar una transformación de cada una de las columnas numéricas del DataFrame utilizando `ColumnTransformer()` más tarde. Considere que lambda debe ser $\lambda$ un parámetro a definir por el usuario.
+
+**Hint:** tome como referencia el siguiente [enlace](https://sklearn-template.readthedocs.io/en/latest/user_guide.html#transformer).
+
+**Nota:** No modificar el método set_output de la clase IQR
+
+**Respuesta:**
+
+```{python}
+class IQR(BaseEstimator, TransformerMixin):
+
+  def __init__(self, l=0):
+    #Completar código aquí
+    self.l = l
+
+  def fit(self, X, y=None):
+    #Completar código aquí
+    self.Q1 = X.quantile(.25)
+    self.Q3 = X.quantile(.75)
+    return self
+
+  def transform(self, X):
+    #Completar código aquí
+    RIC = self.Q3 - self.Q1
+    X = X[(X >= self.Q1 - self.l * RIC) & (X <= self.Q3 + self.l * RIC)]
+    return X
+
+  def set_output(self,transform='default'):
+    #No modificar esta función
+    return self
+```
+
+#### 2.2 Creación del Pipeline [0.5 puntos]
+
+Para comenzar introduciéndose en el uso de pipeline, usted decide definir un pipeline con el Transformer previamente definido. Además, usted decide visualizar cómo cambia la distribución de las variables Precio y Cantidad antes y despues de aplicar IQR. Para ello, usted aplica los siguientes pasos:
+
+- Definir un pipeline llamado `numeric_transformations` para las variables precio y cantidad con la transformación IQR. [0.1 puntos]
+- Defina un column transformer que aplique `numeric_transformations` para las variables numéricas y `passthrough` para las variables categóricas. Adicionalmente, fije el parámetro `verbose_feature_names_out` en `False`. Ver hint al final [0.1 puntos]
+- Defina el dataframe `df_iqr` aplicado el column transformer a los datos proporcionados por Mr. Cheems considerando un valor de $\lambda$ que tenga un desempeño aceptable para ambas variables. [0.1 puntos]
+- Usar `explore_data` en `df_retail` y en `df_iqr`.  [0.1 puntos]
+- Reportar los cambios observados en la distribución de las variables. ¿Qué sucede al aumentar el valor de lambda? [0.1 puntos]
+
+
+**Hint:** El transformador `passthrough` está predefinido y es una opción que puedes usar para las columnas que no deseas transformar. Al especificar 'passthrough' para una parte de tu ColumnTransformer, las columnas correspondientes pasarán a través del ColumnTransformer sin ninguna modificación. El siguiente [enlace](https://scikit-learn.org/stable/modules/generated/sklearn.compose.ColumnTransformer.html) le puede ser útil.
+
+**Nota:** Mantenga el método set_output del column transformer con la transformación `pandas` para obtener un dataframe una vez aplicado el column transformer.
+
+**Respuesta:**
+
+Apóyese de la siguiente estructura para su respuesta:
+
+```{python}
+# Definicion las variables que pasarán por cada pipeline
+numerical_columns = ["Quantity", "Price"]
+categorical_columns = ["Invoice", "StockCode", "Description", "InvoiceDate", "Customer ID","Country"]
+
+# Definicion del pipeline
+numeric_transformations = Pipeline([
+    ('iqr_filter', IQR(5))
+])
+
+# ColumnTransformer
+column_transformer = ColumnTransformer([('numerical', numeric_transformations, numerical_columns),
+                                        ('categorical', "passthrough", categorical_columns )
+                                        ],
+                                        verbose_feature_names_out=False)
+
+column_transformer.set_output(transform='pandas')
+
+# Aplicamos ColumnTransformer a los datos
+df_iqr = column_transformer.fit_transform(df_retail)
+
+# Gráficos
+explore_data(df_iqr)
+```
+
+*Reporte los cambios observados aquí.*
+
+Se puede observar claramente una distribución más uniforme de las variables númericas, dentro de un rango apreciablemente más acotado, bajando del rango de miles al rango de unidades o decenas en ambas variables.
+
+Al aumentar el $\lambda$ más amplio es el rango y por tanto más "permisivo" el filtrado de outliers.
+
+En la práctica un $\lambda$ mayor a $1$ pero menor a $10$ parece razonable para excluir valores con poca ocurrencia y capturar datos con valores que aparecen en el orden de cientos de datos.
+
+### 3. Agregando un imputer al pipeline [1.0 puntos]
+
+
+<p align="center">
+  <img width=300 src="https://media.makeameme.org/created/hmm-there-is.jpg">
+</p>
+
+Para continuar con la limpieza del dataframe usted decide imputar los datos nulos de las variables numéricas, para lo cual decide realizar las siguientes tareas:
+
+1. Crear un pipeline para variables categóricas llamado `categoric_transformations` con un paso llamado `mode_imputer`, en el cual se imputen los datos faltantes por la categoría más frecuente.
+2. Agregar al pipeline `numeric_transformations` un paso llamado `mean_imputer`, en el cual se imputen los datos por la media usando [SimpleImputer](https://scikit-learn.org/stable/modules/generated/sklearn.impute.SimpleImputer.html) [0.1 puntos]
+3. Crear y aplicar un `ColumnTransformer` actualizado con los pipelines `categoric_transformations` y `numeric_transformations` a `df_retail`, creando un dataframe llamado `df_mean_imputer`. [0.1 puntos]
+4. Comparar los resultados de `explore_data` en `df_mean_imputer` y `df_iqr`. ¿Qué diferencias observa en la distribución de los datos? [0.2 puntos]
+5. Cambiar el imputer de `numeric_transformations` por [KNNImputer](https://scikit-learn.org/stable/modules/generated/sklearn.impute.KNNImputer.html) y definir un nuevo dataframe llamado `df_knn_imputer`, aplicando el nuevo ColumnTransformer a `df_retail`. En caso de los tiempos de ejecución sean altos puede probar a reducir el parámetro `n_neighbors`. [0.1 puntos]
+6. Comparar los resultados de `explore_data` en `df_knn_imputer` y `df_iqr`. ¿Qué diferencias observa en la distribución de los datos? [0.2 puntos]
+7. Comparar los resultados de `explore_data` en `df_knn_imputer` y `df_mean_imputer`. ¿Cuál método de imputación es mejor? Deje el método escogido en el ColumnTransformer. [0.2 puntos]
+
+**Nota: Fije el parámetro verbose_feature_names_out en `False` y utilice el método set_output con transformación `pandas` en cada ColumnTransformer para obtener como salida un dataframe.**
+
+**Respuesta:**
+
+```{python}
+# Escriba su respuesta aquí
+
+categoric_transformations = Pipeline([
+    ('mode_imputer', SimpleImputer(strategy="most_frequent") )
+])
+numeric_transformations = Pipeline([
+    ('iqr_filter', IQR(5)),
+    ('mean_imputer', SimpleImputer(strategy="mean"))
+])
+
+# ColumnTransformer
+mean_column_transformer = ColumnTransformer([('numerical', numeric_transformations, numerical_columns),
+                                        ('categorical', categoric_transformations, categorical_columns )
+                                        ],
+                                        verbose_feature_names_out=False)
+
+mean_column_transformer.set_output(transform='pandas')
+
+# Aplicamos ColumnTransformer a los datos
+df_mean_imputer = mean_column_transformer.fit_transform(df_retail)
+
+# Gráficos
+explore_data(df_mean_imputer)
+```
+
+```{python}
+#| scrolled: true
+'''
+numeric_transformations = Pipeline([
+    ('iqr_filter', IQR(1)),
+    ('mean_imputer', KNNImputer(n_neighbors=2))
+])
+
+# ColumnTransformer
+knn_column_transformer = ColumnTransformer([('numerical', numeric_transformations, numerical_columns),
+                                        ('categorical', categoric_transformations, categorical_columns )
+                                        ],
+                                        verbose_feature_names_out=False)
+
+knn_column_transformer.set_output(transform='pandas')
+
+# Aplicamos ColumnTransformer a los datos
+df_knn_imputer = knn_column_transformer.fit_transform(df_retail)
+
+#Gráficos
+explore_data(df_knn_imputer)
+'''
+```
+
+*Escriba su respuesta aquí*
+
+En el caso del imputer mean, la diferencia más obvia tras imputar los datos es la desaparición de valores nulos en el dataset. A parte de esto aparece una nueva barra en ambos histogramas correspondiente al peso de los valores previamente nulos adjudicado al valor promedio de la variable. Como la cantidad de nulos no es sobredimensionada en el dataset, estas barras nuevas no alcanzan a desajustar en gran medida la distribución de las variables, y aparecen como barras de tamaño similar en el entorno de valores cercanos a la media, luego imputar con el valor promedio no parece ser disruptivo en la distribución de las variables.
+
+Siempre el costo computacional debe ser ponderado a la hora de tomar una decisión al elaborar un proyecto de ciencia de datos, al respecto definitivamente el método de mean_transformer es el mejor, pues el método de knn_transformer es computacionalmente inviable para mi equipo.
+
+### 4. Creación de nuevas features [2.0 puntos]
+
+<p align="center">
+  <img width=250 src="https://miro.medium.com/max/1000/1*JtTWgAcfVTWV8OTjT47Atg.jpeg">
+</p>
+
+#### 4.1 Definicion de LRMFP [1.0 puntos]
+
+Dado que Mr. Lepin está interesado en obtener nuevos atributos relevantes para su negocio, su equipo de expertos sugiere la construcción de variables **LRMFP**, las que se construyen en base a las siguientes definiciones:
+
+- **Length (L)**: Intervalo de tiempo, en días, entre la primera y la última visita del cliente. Mientras mas grande sea el valor, mas fiel es el cliente.
+
+- **Recency (R)**: Indica hace cuanto tiempo el cliente realizo su ultima compra. Notar que para este caso, mientras mas grande es el valor, menos interes posee el usuario para repetir una compra en uno de los locales. **Considere "hoy" como la fecha mas reciente del dataset**.
+
+- **Monetary (M)**: El término "monetario" se refiere a la cantidad media de dinero gastada por cada visita del cliente durante el período de observación y refleja la contribución del cliente a los ingresos de la empresa.
+
+- **Frequency (F)**: Se refiere al número total de visitas del cliente durante el periodo de observación. Cuanto mayor sea la frecuencia, mayor será la fidelidad del cliente.
+
+- **Periodicity (P)**: Representa si los clientes visitan las tiendas con regularidad.
+
+$$Periodicity(n)=std(IVT_1, ..., IVT_n)$$
+
+Donde $IVT$ denota el tiempo entre visitas y n representa el número de valores de tiempo entre visitas de un cliente.
+
+
+$$IVT_i=date\_diff(t_{i+1},t)$$
+
+En base a las definiciones señaladas, diseñe una función que permita obtener las características **LRMFP** recibiendo un DataFrame como entrada. Para esto, no estará permitido el uso de iteradores, utilice todas las herramientas que les ofrece `pandas` para realizar esto.
+
+Una referencia que le puede ser útil es el [documento original](https://www.researchgate.net/publication/315979555_LRFMP_model_for_customer_segmentation_in_the_grocery_retail_industry_a_case_study) en donde se propone este método.
+
+**<u>Formato</u> del Resultado Esperado:**
+
+| Customer ID | Length | Recency | Frequency | Monetary | Periodicity |
+|------------:|-------:|--------:|----------:|---------:|------------:|
+|   12346.0   |    294 |      67 |        46 |   -64.68 |        37.0 |
+|   12347.0   |     37 |       3 |        71 |  1323.32 |         0.0 |
+|   12349.0   |    327 |      43 |       107 |  2646.99 |        78.0 |
+|   12352.0   |     16 |      11 |        18 |   343.80 |         0.0 |
+|   12356.0   |     44 |      16 |        84 |  3562.25 |        12.0 |
+
+**Respuesta:**
+
+```{python}
+#| cell_id: 39a8b98eacdc43a4bdfeaa138b746198
+#| deepnote_cell_height: 83.86666870117188
+#| deepnote_cell_type: code
+#| owner_user_id: 8c58f50a-7a08-41a2-952e-38bdb7507048
+#| tags: []
+def custom_features(dataframe_in):
+    return (
+        dataframe_in
+        .assign(
+            Length=(lambda x: x.InvoiceDate),
+            Recency=(lambda x: x.InvoiceDate),
+            Monetary=(lambda x: x.Price),
+            Frecuency=1,
+            Periodicity=(lambda x: x.InvoiceDate),
+        )
+        .groupby("Customer ID").aggregate({
+            "Length": (lambda x: (x.max() -x.min()).days),
+            "Recency": (lambda x: (pd.to_datetime("today")- x.max()).days),
+            "Monetary": "mean",
+            "Frecuency": "sum",
+            "Periodicity": (lambda x: np.std((np.roll(x.map(lambda date: date.day),1) - x.map(lambda date: date.day))[1:]))
+        })
+    )
+```
+
+#### 4.2 Agregando las custom features [1.0 puntos]
+
+Ahora, usted decide agregar al pipeline las nuevas variables creadas, para lo cual realiza las siguientes tareas:
+
+1. Cree un nuevo pipeline llamado `retail_pipeline` que encapsule el ColumnTransformer y calcule las LRMFP. El primer paso del pipeline llámelo  `col_tranformer` y el segundo paso llámelo `custom_features`, incorpora las nuevas variables al dataframe. Hint: les puede ser útil investigar [este](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.FunctionTransformer.html) método. [0.1 puntos]
+2. Aplicar el pipeline actualizado a los datos proporcionados por Mr. Cheems, creando un nuevo dataframe llamado `df_custom`. [0.1 puntos]
+3. Explorar la distribución de las nuevas variables con `explore_data` y comentar brevemente (2-3 líneas) características de cada custom feature. [0.5 puntos]
+5. Entregar un insight para el negocio en base a las nuevas variables. [0.3 puntos]
+
+**Nota:** Recuerde fijar el parámetro `verbose_feature_names_out` en `False` e incorporar el método `set_output` para obtener una salida en formato dataframe del ColumnTransformer.
+
+**Respuesta**
+
+```{python}
+retail_pipeline = Pipeline([
+    ("col_transformer", mean_column_transformer),
+    ("custom_features", FunctionTransformer(func=custom_features)),
+])
+
+retail_pipeline.set_output(transform='pandas')
+
+# Aplicamos ColumnTransformer a los datos
+df_custom = retail_pipeline.fit_transform(df_retail)
+```
+
+```{python}
+explore_data(df_custom, columns=df_custom.columns)
+```
+
+**Respuesta**:
+El primer detalle que salta a la vista es que las variables *Length, Frecuency y Periodicity* asignan un gran peso al valor 0, por lo clientes que acuden una sóla vez a la tienda, lo cual caracteriza en gran medida las distribuciones. Ignorando estos valores, *Length* presenta dos puntos de tendencia central (bimodalidad), cerca a los 260 y a los 360 días, *Frecuency* muestra una clara tendencia central en mclientes que acudieron pocas veces a la tienda, habiendo una relación directa sobre-lineal en que es menos menos probable que clientes acudan con gran frecuencia,  y *Periodicity* muestra un comportamiento gaussiano en torno al $3$ cuando ignoramos los valores nulos.
+
+En cuanto a las variables faltantes podemos decir que *Monetary* presenta un comportamiento normal con media cercana al $2.5$ y *Recency* toma valores muy altos por ser un dataset viejo, con la mayoría de registros en la fecha más reciente y cada vez menos registros para fechas más lejanas a la actualidad.
+
+En cuanto a insight del negocio, la bimodalidad de la variable Length nos podría hablar de dos periodos en que en que una gran cantidad de clientes llegaron a la tienda o que muchos clientes compran en la tienda durante un periodo de un año (por la moda en torno a $350$). La media de la variable monetary nos hablaría de cuanto gasta un cliente promedio en la tienda y Recency nos indica fuertemente que cada vez hay más clientes que acuden a la tienda. Frecuency nos habla de que la mayoría de clientes compran pocas veces y Periodicity que hay una tendencia normal a acudir periodicamente a la tienda.
+
+### 5. MinMax Scaler [1.0 puntos]
+
+<p align="center">
+  <img width=300 src="https://i.imgflip.com/1fsprn.jpg">
+</p>
+
+#### 5.1 Definición del Column Transformer [0.5 puntos]
+
+Construya una clase llamada `MinMax()` para realizar una transformación de cada una de las columnas de un DataFrame utilizando `ColumnTransformer()`. Recuerde  usar `BaseEstimator` y `TransformerMixin`.
+
+
+ Para esto considere que Min-Max escaler queda dada por la ecuación:
+
+$$MinMax = \dfrac{x-min(x)}{max(x) - min(x)}$$
+
+
+Consulte el siguiente [link](https://sklearn-template.readthedocs.io/en/latest/user_guide.html#transformer) si tiene dudas sobre la creación de custom transformers.
+
+**Respuesta:**
+
+```{python}
+#| cell_id: 07cb4dcf097c4c6baabb9ae2bda25caf
+#| deepnote_cell_height: 83.86666870117188
+#| deepnote_cell_type: code
+#| tags: []
+class MinMax(BaseEstimator, TransformerMixin):
+
+    def fit(self,X):
+        self.min = X.min()
+        self.max = X.max()
+        return self
+
+    def transform(self,X):
+        #Agregar código aquí
+        X = (X - self.min) / (self.max - self.min)
+        return X
+
+    def set_output(self,transform='default'):
+        #No modificar este método
+        return self
+
+```
+
+#### 5.2 Incorporando MinMax al pipeline [0.5 puntos]
+
+Ahora, usted decide agregar el escalamiento al pipeline, para lo que decide seguir los siguientes pasos:
+
+- Agregar el paso `minmax` al pipeline `numeric_transformations`, haciendo uso de la clase creada. [0.1 puntos]
+- Defina el dataframe `df_minmax` aplicando el ColumnTransformer actualizado a los datos proporcionados por Mr. Cheems. [0.1 puntos]
+- Usar `explore_data` en `df_retail` y en `df_minmax`. [0.1 puntos]
+- Reportar los cambios observados en la distribución de las variables.  [0.2 puntos]
+
+**Nota:** Recuerde fijar el parámetro `verbose_feature_names_out` en `False` e incorporar el método `set_output` para obtener una salida en formato dataframe del ColumnTransformer.
+
+**Respuesta:**
+
+```{python}
+#| cell_id: 1889976b7a4c40c7825752979b577567
+#| deepnote_cell_height: 65.86666870117188
+#| deepnote_cell_type: code
+#| tags: []
+# Escriba su respuesta aquí
+
+categoric_transformations = Pipeline([
+    ('mode_imputer', SimpleImputer(strategy="most_frequent") )
+])
+numeric_transformations = Pipeline([
+    ('iqr_filter', IQR(5)),
+    ('mean_imputer', SimpleImputer(strategy="mean")),
+    ('minmax', MinMax())
+])
+
+# ColumnTransformer
+minmax_column_transformer = ColumnTransformer([('numerical', numeric_transformations, numerical_columns),
+                                        ('categorical', categoric_transformations, categorical_columns )
+                                        ],
+                                        verbose_feature_names_out=False)
+
+minmax_column_transformer.set_output(transform='pandas')
+
+# Aplicamos ColumnTransformer a los datos
+df_minmax = minmax_column_transformer.fit_transform(df_retail)
+```
+
+```{python}
+# Gráficos
+print("\n\nExploración para df_retail:")
+explore_data(df_retail)
+print("\n\nExploración para df_mean_imputer:")
+explore_data(df_mean_imputer)
+print("\n\nExploración para df_minmax:")
+explore_data(df_minmax)
+```
+
+**Respuesta**
+
+Dado que el escalamiento mínimo-máximo se ve fuertemente afectado por la presencia de outliers, conservaremos en el pipeline la transformación IQR así como los imputadores. Se grafica también explore_data para el dataframe df_mean_imputer y así obtener una comparación más justa con el efecto de minmax sin considerar la eliminación de outliers e imputación de datos.
+
+La observación más relevante respecto a la distribución de los datos es que esta permanece mayormente inalterada, pero resulta escalada a un intervalo entre $0$ y $1$ lo que permite un mejor desempeño de diversos algoritmos y una comparación más justa entre variables, a cambio de menor interpretabilidad de cada variable, al perder su magnitud real.
+
+### 6. Pregunta teórica [0.5 puntos]
+
+<p align="center">
+  <img width=300 src="https://file.coinexstatic.com/2023-09-19/166BAC031F222E5910954E7D7D0BC844.png">
+</p>
+
+Finalmente, explíquele a Mr. Cheems porqué es útil la creación de pipelines al momento de hacer Feature Engineering en Machine Learning.
+
+**Respuesta:**
+
+*Escriba su respuesta aquí*
+
+Es relevante la creación de pipelines porque permite la estandarización del proceso de feature engineering, lo cual evita errores a la hora de realizar instanciaciones del mismo proceso sobre distintas iteraciones de datasets, pero más aún porque permite un seguimiento riguroso de las distintas etapas, previniendo malas practicas que perjudiquen los resultados de un proyecto, como lo pueden ser el *Data Leakage*. Además mejora el rendimiento y legibilidad del código y permite hacer variaciones de manera fácil y consistente.
+
+# Conclusión
+Eso ha sido todo para el lab de hoy, recuerden que el laboratorio tiene un plazo de entrega de una semana. Cualquier duda del laboratorio, no duden en contactarnos por el foro de U-cursos o por correo.
+
+![Gracias Totales!](https://i.pinimg.com/originals/65/ae/27/65ae270df87c3c4adcea997e48f60852.gif "bruno")
+
+<br>
+<center>
+<img src="https://i.kym-cdn.com/photos/images/original/001/194/195/b18.png" width=100 height=50 />
+</center>
+<br>
+
+<a style='text-decoration:none;line-height:16px;display:flex;color:#5B5B62;padding:10px;justify-content:end;' href='https://deepnote.com?utm_source=created-in-deepnote-cell&projectId=87110296-876e-426f-b91d-aaf681223468' target="_blank">
+<img alt='Created in deepnote.com' style='display:inline;max-height:16px;margin:0px;margin-right:7.5px;' src='data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iODBweCIgaGVpZ2h0PSI4MHB4IiB2aWV3Qm94PSIwIDAgODAgODAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDU0LjEgKDc2NDkwKSAtIGh0dHBzOi8vc2tldGNoYXBwLmNvbSAtLT4KICAgIDx0aXRsZT5Hcm91cCAzPC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGcgaWQ9IkxhbmRpbmciIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxnIGlkPSJBcnRib2FyZCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTEyMzUuMDAwMDAwLCAtNzkuMDAwMDAwKSI+CiAgICAgICAgICAgIDxnIGlkPSJHcm91cC0zIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMjM1LjAwMDAwMCwgNzkuMDAwMDAwKSI+CiAgICAgICAgICAgICAgICA8cG9seWdvbiBpZD0iUGF0aC0yMCIgZmlsbD0iIzAyNjVCNCIgcG9pbnRzPSIyLjM3NjIzNzYyIDgwIDM4LjA0NzY2NjcgODAgNTcuODIxNzgyMiA3My44MDU3NTkyIDU3LjgyMTc4MjIgMzIuNzU5MjczOSAzOS4xNDAyMjc4IDMxLjY4MzE2ODMiPjwvcG9seWdvbj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0zNS4wMDc3MTgsODAgQzQyLjkwNjIwMDcsNzYuNDU0OTM1OCA0Ny41NjQ5MTY3LDcxLjU0MjI2NzEgNDguOTgzODY2LDY1LjI2MTk5MzkgQzUxLjExMjI4OTksNTUuODQxNTg0MiA0MS42NzcxNzk1LDQ5LjIxMjIyODQgMjUuNjIzOTg0Niw0OS4yMTIyMjg0IEMyNS40ODQ5Mjg5LDQ5LjEyNjg0NDggMjkuODI2MTI5Niw0My4yODM4MjQ4IDM4LjY0NzU4NjksMzEuNjgzMTY4MyBMNzIuODcxMjg3MSwzMi41NTQ0MjUgTDY1LjI4MDk3Myw2Ny42NzYzNDIxIEw1MS4xMTIyODk5LDc3LjM3NjE0NCBMMzUuMDA3NzE4LDgwIFoiIGlkPSJQYXRoLTIyIiBmaWxsPSIjMDAyODY4Ij48L3BhdGg+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMCwzNy43MzA0NDA1IEwyNy4xMTQ1MzcsMC4yNTcxMTE0MzYgQzYyLjM3MTUxMjMsLTEuOTkwNzE3MDEgODAsMTAuNTAwMzkyNyA4MCwzNy43MzA0NDA1IEM4MCw2NC45NjA0ODgyIDY0Ljc3NjUwMzgsNzkuMDUwMzQxNCAzNC4zMjk1MTEzLDgwIEM0Ny4wNTUzNDg5LDc3LjU2NzA4MDggNTMuNDE4MjY3Nyw3MC4zMTM2MTAzIDUzLjQxODI2NzcsNTguMjM5NTg4NSBDNTMuNDE4MjY3Nyw0MC4xMjg1NTU3IDM2LjMwMzk1NDQsMzcuNzMwNDQwNSAyNS4yMjc0MTcsMzcuNzMwNDQwNSBDMTcuODQzMDU4NiwzNy43MzA0NDA1IDkuNDMzOTE5NjYsMzcuNzMwNDQwNSAwLDM3LjczMDQ0MDUgWiIgaWQ9IlBhdGgtMTkiIGZpbGw9IiMzNzkzRUYiPjwvcGF0aD4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+' > </img>
+Created in <span style='font-weight:600;margin-left:4px;'>Deepnote</span></a>
+

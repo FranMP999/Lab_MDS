@@ -1,0 +1,13 @@
+digest: b5ad1075
+name: dataset
+profile: '{"num_rows": 983, "num_elements": 8847}'
+schema: '{"mlflow_colspec": [{"type": "double", "name": "ph", "required": true}, {"type":
+  "double", "name": "Hardness", "required": true}, {"type": "double", "name": "Solids",
+  "required": true}, {"type": "double", "name": "Chloramines", "required": true},
+  {"type": "double", "name": "Sulfate", "required": true}, {"type": "double", "name":
+  "Conductivity", "required": true}, {"type": "double", "name": "Organic_carbon",
+  "required": true}, {"type": "double", "name": "Trihalomethanes", "required": true},
+  {"type": "double", "name": "Turbidity", "required": true}]}'
+source: '{"tags": {"mlflow.user": "franmal", "mlflow.source.name": "optimize.py",
+  "mlflow.source.type": "LOCAL", "mlflow.source.git.commit": "5765a90a2c910cc85d9020ab647a66219347210d"}}'
+source_type: code

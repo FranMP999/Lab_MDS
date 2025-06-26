@@ -1,0 +1,9 @@
+digest: 70553ecb
+name: dataset
+profile: '{"features_shape": [2293, 9], "features_size": 20637, "features_nbytes":
+  82548}'
+schema: '{"mlflow_tensorspec": {"features": "[{\"type\": \"tensor\", \"tensor-spec\":
+  {\"dtype\": \"float32\", \"shape\": [-1, 9]}}]", "targets": null}}'
+source: '{"tags": {"mlflow.user": "franmal", "mlflow.source.name": "optimize.py",
+  "mlflow.source.type": "LOCAL", "mlflow.source.git.commit": "5765a90a2c910cc85d9020ab647a66219347210d"}}'
+source_type: code

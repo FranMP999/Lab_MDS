@@ -1,0 +1,369 @@
+---
+jupyter: python3
+---
+
+<h1><center>Laboratorio 7: Interpretabilidad 🤖</center></h1>
+
+<center><strong>MDS7202: Laboratorio de Programación Científica para Ciencia de Datos - Otoño 2025</strong></center>
+
+### Cuerpo Docente:
+
+- Profesores: Stefano Schiappacasse, Sebastián Tinoco
+- Auxiliares: Melanie Peña, Valentina Rojas
+- Ayudantes: Angelo Muñoz, Valentina Zúñiga
+
+### Equipo: SUPER IMPORTANTE - notebooks sin nombre no serán revisados
+
+- Nombre de alumno 1:
+- Nombre de alumno 2:
+
+### **Link de repositorio de GitHub:** [Insertar Repositorio](https://github.com/...../)
+
+### Indice
+
+1. [Temas a tratar](#Temas-a-tratar:)
+3. [Descripcción del laboratorio](#Descripción-del-laboratorio.)
+4. [Desarrollo](#Desarrollo)
+
+## Temas a tratar
+
+- Clasificación usando `XGBoost`.
+- Métodos Agnósticos Globales de Interpretabilidad (`Partial Dependence Plot`, `Permutation Feature Importance`)
+- Métodos Agnósticos Locales de Interpretabilidad (`Scoped Rules`, `SHAP`)
+
+## Reglas:
+
+- **Grupos de 2 personas**
+- Fecha de entrega: 6 días de plazo con descuento de 1 punto por día. Entregas Martes a las 23:59.
+- Instrucciones del lab el viernes a las 16:15 en formato online. Asistencia no es obligatoria, pero se recomienda fuertemente asistir.
+- <u>Prohibidas las copias</u>. Cualquier intento de copia será debidamente penalizado con el reglamento de la escuela.
+- Tienen que subir el laboratorio a u-cursos y a su repositorio de github. Labs que no estén en u-cursos no serán revisados. Recuerden que el repositorio también tiene nota.
+- Cualquier duda fuera del horario de clases al foro. Mensajes al equipo docente serán respondidos por este medio.
+- Pueden usar cualquier material del curso que estimen conveniente.
+
+
+### Objetivos principales del laboratorio
+
+- Generar un pipeline de clasificación con `XGBoost`.
+- Implementar modelos de interpretabilidad para explicar el funcionamiento del modelo de clasificación.
+
+El laboratorio deberá ser desarrollado sin el uso indiscriminado de iteradores nativos de python (aka "for", "while"). La idea es que aprendan a exprimir al máximo las funciones optimizadas que nos entrega `pandas`, las cuales vale mencionar, son bastante más eficientes que los iteradores nativos sobre DataFrames.
+
+# 1. Problemas Clínicos del Dr. Simi
+
+<p align="center">
+  <img src="https://gantz.cl/wp-content/uploads/2020/01/79024136_2718114448239059_7240913062570491904_o.jpg" width="350">
+</p>
+
+El reconocido **Dr. Simi**, famoso vendedor de medicamentos en latinoamerica, debido a la creciente prevalencia de enfermedades crónicas, como la diabetes, decidió abrir una clínica especializada en el tratamiento de esta enfermedad en nuestro país.
+
+La clínica del Doctor Simi se convirtió en un lugar donde los pacientes con diabetes podrían recibir atención médica integral. El personal médico estaba compuesto por especialistas en endocrinología, nutrición y enfermería, todos capacitados en el manejo de la diabetes.
+
+Sin embargo él se ha dado cuenta que los tiempos han cambiado y gracias a las tecnologías es posible generar mejores predicciones en la diabetes conociendo el historial médico de las personas. Por esto, el doctor se ha colocado una meta de incluir modelos de machine learning dentro de sus clínicas, para ello le ha solicitado crear un modelo capaz de predecir/clasificar diabetes pero le rogó que el desarrollo del modelo tuviera un especial enfoque en la interpretabilidad de lo que hace su modelo.
+
+Para que usted pueda entrenar el modelo, Dr. Simi le ha entregado un dataset de todos los clientes que fueron detectados con diabetes a lo largo de la historia de la clinica. Con ello, adjunta el historial médico de las personas en forma de datos tabulares para que usted pueda realizar fácilmente la clasificación.
+
+```{python}
+#| cell_id: 3252f09552814a80ac2d5e3cc67a1447
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 294
+#| execution_start: 1686884002582
+#| source_hash: fa5e6129
+import numpy as np
+import pandas as pd
+
+df = pd.read_csv('diabetes_data.csv')
+df.head(5)
+```
+
+
+## 2. Clasificación de pacientes con diabetes (5 puntos)
+
+<p align="center">
+  <img src="https://media.tenor.com/QH--g3ZaSbsAAAAC/dr-simi-abrazo.gif" width="400">
+</p>
+
+Tareas:
+1. En primer lugar, el reconocido doctor le pide entrenar un modelo de `XGBoost` utilizando como target la columna `Diabetes` del dataset `diabetes_data.csv`. Para el entrenamiento, realice los siguientes pasos:
+  * Realice una breve exploración de los datos y determine si aplicará transformaciones (MinMaxScaler, StandardScaler, etc.) en alguna/s de las variables. (1 punto)
+  * Cree un conjunto de entrenamiento y uno de prueba, con una proporción de 1/3 en el conjunto de prueba. (0.5 puntos)
+  * Cree un ColumnTransformer de preprocesamiento donde aplique las transformaciones determinadas anteriormente. Fije el parámetro `verbose_feature_names_out=False` y fije la salida del ColumnTransformer en formato pandas mediante el método `.set_output(transform='pandas')`. (1 punto)
+  *  Cree un pipeline donde integre el preprocesamiento y el modelo `XGBoost` y entrene el modelo. Luego utilice `classification_report(..)` para reportar el desempeño del modelo. (1 punto)
+
+Comente sus decisiones y los resultados obtenidos con el modelo.
+
+2. Luego, le pide responder las siguientes preguntas:
+  *  ¿Es acaso un buen predictor de diabetes? (0.5 puntos)
+  * ¿Qué buscan explicar las métricas utilizadas? (0.5 puntos)
+  * ¿Las métricas utilizadas para medir la predictibilidad le permiten asegurar que su modelo haga una buena elección de las features?(0.5 puntos)
+
+
+```{python}
+#| cell_id: a928e00142bf45ee8d26207bab5a920d
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 50
+#| execution_start: 1686930782578
+#| source_hash: 553ccab0
+# Inserte su código aquí
+
+display(df.dtypes)
+display(df.describe())
+```
+
+No se observa nada extraño en los datos en una exploración temprana. Como todas las variables son numéricas no es necesario realizar ningún tipo de transformación, en XBOOST es recomendable dejar al algoritmo entrenar con los datos crudos, el escalamiento de los datos podría afectar negativamente al algoritmo. Por no mencionar que varias de las variables son binarias y el escalamiento no tendría sentido.
+
+```{python}
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report
+from xgboost import XGBClassifier
+RANDOM_STATE = 99
+
+X = df.drop(columns="Diabetes")
+y = df.Diabetes
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.3, stratify=y, random_state=RANDOM_STATE
+)
+
+pipeline = Pipeline([("classifier" , XGBClassifier(seed=RANDOM_STATE))])
+```
+```{python}
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
+print(classification_report(y_test, y_pred))
+```
+
+
+
+
+## 3. Importancia de las features con XGBoost (5 puntos)
+
+<p align="center">
+  <img src="https://media.tenor.com/5JAj5_IiagEAAAAd/dr-simi-dr-simi-dance.gif" width="400">
+</p>
+
+Tareas:
+1. Para añadir el toque de interpretabilidad que Dr. Simi le pide, se le pide calcular la **importancia de las features** del modelo entrenado utilizando todos los métodos (*weight*, *cover*, *gain*) que posee xgboost usando `plot_importance`. `Hint:` Puede acceder a un paso de un pipeline por su nombre mediante el método `.named_steps[...]` (3 puntos)
+2. ¿Los resultados obtenidos con los diferentes métodos son compatibles?, comente sus resultados y a que se debe la igualdad o desigualdad que ve en los resultados. (1 punto)
+3. Finalmente, ¿las importancias obtenidas son suficientes para obtener la interpretabilidad de un modelo que utiliza árboles? ¿Qué debilidad presenta este método? (1 punto)
+
+```{python}
+#| cell_id: 32be9645ac03408b98705d22def41265
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 2
+#| execution_start: 1686930815998
+#| source_hash: 553ccab0
+# Inserte su código aquí
+import matplotlib.pyplot as plt
+from xgboost import plot_importance
+
+plot_importance(pipeline["classifier"], importance_type="weight")
+plt.show()
+plot_importance(pipeline["classifier"], importance_type="cover")
+plt.show()
+plot_importance(pipeline["classifier"], importance_type="gain")
+plt.show()
+
+```
+
+## 4. Métodos Agnósticos Globales (10 puntos)
+
+<p align="center">
+  <img src="https://media.tenor.com/JcRHtjVuXN8AAAAC/dr-simi-farmacias-similares.gif" width="400">
+</p>
+
+Tareas:
+1. Para mitigar los problemas encontrados en la sección anterior, Dr. Simi le pide implementar un **método de permutación** que le permita observar la importancia de las features. `Nota:`Tenga cuidado con el orden de las columnas de este método. `Hint:` Puede obtener los features del clasificador con su respectivo orden mediante el método `.get_booster().feature_names` (2 puntos)
+2. Para que su modelo sea consistente, repita el proceso **30 veces** y verifique la desviación estándar de sus resultados (¿Qué señala esta?). (2 puntos)
+3. Visualice los resultados de este método en un gráfico. (2 puntos)
+4. Además, responda las siguientes preguntas:
+  - ¿Cómo mide la importancia de las features su propuesta? (1 punto)
+  - ¿Qué features tienen un mayor impacto en la salida del modelo?. Comente las 5 primeras, ¿tienen sentido? (1 punto)
+  - ¿Cómo cambian sus conclusiones con respecto a las features importances del punto anterior? (1 punto)
+  - Nombre y explique 3 ventajas y 3 desventajas del método implementado. (1 punto)
+
+```{python}
+#| cell_id: 83032f5e2894423dbafa952e1d3f89cb
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 43036
+#| execution_start: 1686882223141
+#| source_hash: c8f2357f
+# Inserte su código aquí
+```
+
+
+## 5. Métodos Agnósticos Locales (20 puntos)
+
+<p align="center">
+  <img src="https://i.makeagif.com/media/10-24-2024/oMCrLI.gif" width="400">
+</p>
+
+### 5.1 Calculando Shap Values (4 puntos)
+
+Tareas:
+1. Alegre por saber cómo funciona el modelo de predicción a nivel general, Dr. Simi le pide ahora interpretar las predicciones de su modelo a nivel de paciente (es decir, desde un punto de vista **local**). Para esto, el ilustre farmacéutico le pide calcular los *shap values* de su modelo. (2 puntos)
+2. ¿Qué representa cada número en su resultado? (1 punto)
+3. ¿Es posible atribuir un significado a la positividad/negatividad de cada valor? (1 punto)
+
+```{python}
+#| cell_id: dada61becc854fe4830665a1e1fcfb8b
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 7982
+#| execution_start: 1686925464848
+#| source_hash: 5d97bad
+!pip install shap
+```
+
+```{python}
+#| cell_id: c2d01e18bb9946579275006ac63f29f8
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 2
+#| execution_start: 1686884837621
+#| source_hash: 7220fd12
+import warnings
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
+```
+
+```{python}
+#| cell_id: 28773926243a4632adf4ebe7f9b23c86
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 3
+#| execution_start: 1686930931899
+#| source_hash: 7b093107
+# Inserte código para calcular shapley values aquí
+```
+
+### 5.2 Aporte local (4 puntos)
+
+1. Usando los *shap values* calculados, grafique el **aporte local** de las diferentes variables para las instancias **1**, **9** y **150** (1 punto).
+
+2. Interprete sus resultados y responda:
+
+  - ¿Qué variables afectan de manera positiva/negativa a la probabilidad de poseer diabetes? (1 punto)
+
+  - ¿Existe algún patrón común entre las instancias analizadas? (1 punto)
+
+  - ¿Es posible generalizar estas conclusiones a todo el dataset? (1 punto)
+
+```{python}
+#| cell_id: 114ead8d9d674348a6eb462b83e54f0b
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 2
+#| execution_start: 1686930940135
+#| source_hash: 5f8720eb
+# Inserte código para generar gráficos de aporte local aquí
+```
+
+### 5.3 Aporte global (4 puntos)
+
+Genere ahora una visualización donde se grafique el aporte de cada feature a nivel **global** e interprete sus resultados. ¿Qué diferencias existen con las conclusiones generadas a nivel de instancia?
+
+```{python}
+#| cell_id: 54e88d349b7c476d82a95b977ce23fd4
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 4
+#| execution_start: 1686930956967
+#| source_hash: 99e7a96a
+# Inserte código para generar gráficos de aporte global aquí
+```
+
+### 5.4 Scatter plot (4 puntos)
+
+Grafique ahora un *scatterplot* entre los *shap values* y las primeras 5 features con mayor impacto global (un gráfico por cada feature), coloreando cada punto por la probabilidad de tener diabetes. ¿Qué puede concluir de sus resultados?
+
+```{python}
+#| cell_id: fe980bf5ee9c4cda84cb87db6e6f41dd
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 2
+#| execution_start: 1686930965534
+#| source_hash: 80c98595
+# Inserte código para generar gráficos de feature vs shap value aquí
+```
+
+### 5.5 Partial Dependence Plot (4 puntos)
+
+Finalmente, se le pide generar un gráfico del tipo Partial Dependence Plot para las mismas 5 variables con mayor impacto global usando una submuestra de 1000 observaciones. ¿Qué relación existe entre la salida promedio del modelo y cada feature analizada? ¿Son estas conclusiones generalizables para todo el conjunto de datos?
+
+```{python}
+#| cell_id: fe7a7b2e6f664d129fee9f64dd57f6bd
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 4
+#| execution_start: 1686930977674
+#| source_hash: 4e0f176b
+# Inserte código para generar gráficos PDP aquí
+```
+
+
+## 6. Sistema de Reglas! (10 punto)
+
+<p align="center">
+  <img src="https://media.baamboozle.com/uploads/images/125978/1638281150_1380186_gif-url.gif" width="400">
+</p>
+
+Después de todo el trabajo hecho, Dr. Simi le pide simplificar el funcionamiento de su modelo en un sistema de reglas que le permita explicar a sus clientes las predicciones que genera su modelo.
+En particular, Dr. Simi le pide explicar la decisión tomada para las observaciones **1000**, **3001** y **5751**. Con las reglas propuestas señale a **cuánta población** es posible explicar con estas reglas e indique la **precisión** que poseen las reglas en la totalidad de los datos. ¿Tienen sentido sus reglas propuestas para las observaciones?. Fundamente sus respuesta señalando el impacto que tienen sus reglas sobre todo el conjunto de datos.
+
+`Hint:` Como debe entregar las columnas que entran al clasificador entrenado de su pipeline, le será útil extraer el paso de preprocesamiento y generar dataframes preprocesados para el conjunto `train` y `test`.
+
+```{python}
+#| cell_id: 9e3327e11a104dd5917f594a5e10baee
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 21693
+#| execution_start: 1686885552805
+#| source_hash: e7a6b6c4
+#| tags: []
+!pip install alibi
+```
+
+```{python}
+#| cell_id: bb38bb05376b429297fb0b3618fec6d4
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 10473
+#| execution_start: 1686885694481
+#| source_hash: e4ec2c4b
+from alibi.explainers import AnchorTabular
+```
+
+```{python}
+#| cell_id: c51b7d6bfea74288b77cb73ba8c86978
+#| deepnote_cell_type: code
+#| deepnote_to_be_reexecuted: false
+#| execution_millis: 76
+#| execution_start: 1686931515362
+#| source_hash: 51992da3
+# Inserte su código para generar sistema de reglas aquí
+
+idx = 1000
+# explicar predicción idx 1000
+
+idx = 3001
+# explicar predicción idx 3001
+
+idx = 5751
+# explicar predicción idx 5751
+```
+
+# Retrospectiva... (10 puntos)
+
+En base a los diferentes métodos que implementa y ha comentado en este laboratorio, comente qué métodos le permiten entregar mejores conclusiones para la tarea de clasificación de diabetes. Por otro lado, ¿qué métodos son más útiles para el problema del doctor Simi, métodos agnosticos locales o globales?
+
+> Fundamente su Respuesta aquí
+
+<a style='text-decoration:none;line-height:16px;display:flex;color:#5B5B62;padding:10px;justify-content:end;' href='https://deepnote.com?utm_source=created-in-deepnote-cell&projectId=87110296-876e-426f-b91d-aaf681223468' target="_blank">
+<img alt='Created in deepnote.com' style='display:inline;max-height:16px;margin:0px;margin-right:7.5px;' src='data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iODBweCIgaGVpZ2h0PSI4MHB4IiB2aWV3Qm94PSIwIDAgODAgODAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDU0LjEgKDc2NDkwKSAtIGh0dHBzOi8vc2tldGNoYXBwLmNvbSAtLT4KICAgIDx0aXRsZT5Hcm91cCAzPC90aXRsZT4KICAgIDxkZXNjPkNyZWF0ZWQgd2l0aCBTa2V0Y2guPC9kZXNjPgogICAgPGcgaWQ9IkxhbmRpbmciIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxnIGlkPSJBcnRib2FyZCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTEyMzUuMDAwMDAwLCAtNzkuMDAwMDAwKSI+CiAgICAgICAgICAgIDxnIGlkPSJHcm91cC0zIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMjM1LjAwMDAwMCwgNzkuMDAwMDAwKSI+CiAgICAgICAgICAgICAgICA8cG9seWdvbiBpZD0iUGF0aC0yMCIgZmlsbD0iIzAyNjVCNCIgcG9pbnRzPSIyLjM3NjIzNzYyIDgwIDM4LjA0NzY2NjcgODAgNTcuODIxNzgyMiA3My44MDU3NTkyIDU3LjgyMTc4MjIgMzIuNzU5MjczOSAzOS4xNDAyMjc4IDMxLjY4MzE2ODMiPjwvcG9seWdvbj4KICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik0zNS4wMDc3MTgsODAgQzQyLjkwNjIwMDcsNzYuNDU0OTM1OCA0Ny41NjQ5MTY3LDcxLjU0MjI2NzEgNDguOTgzODY2LDY1LjI2MTk5MzkgQzUxLjExMjI4OTksNTUuODQxNTg0MiA0MS42NzcxNzk1LDQ5LjIxMjIyODQgMjUuNjIzOTg0Niw0OS4yMTIyMjg0IEMyNS40ODQ5Mjg5LDQ5LjEyNjg0NDggMjkuODI2MTI5Niw0My4yODM4MjQ4IDM4LjY0NzU4NjksMzEuNjgzMTY4MyBMNzIuODcxMjg3MSwzMi41NTQ0MjUgTDY1LjI4MDk3Myw2Ny42NzYzNDIxIEw1MS4xMTIyODk5LDc3LjM3NjE0NCBMMzUuMDA3NzE4LDgwIFoiIGlkPSJQYXRoLTIyIiBmaWxsPSIjMDAyODY4Ij48L3BhdGg+CiAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMCwzNy43MzA0NDA1IEwyNy4xMTQ1MzcsMC4yNTcxMTE0MzYgQzYyLjM3MTUxMjMsLTEuOTkwNzE3MDEgODAsMTAuNTAwMzkyNyA4MCwzNy43MzA0NDA1IEM4MCw2NC45NjA0ODgyIDY0Ljc3NjUwMzgsNzkuMDUwMzQxNCAzNC4zMjk1MTEzLDgwIEM0Ny4wNTUzNDg5LDc3LjU2NzA4MDggNTMuNDE4MjY3Nyw3MC4zMTM2MTAzIDUzLjQxODI2NzcsNTguMjM5NTg4NSBDNTMuNDE4MjY3Nyw0MC4xMjg1NTU3IDM2LjMwMzk1NDQsMzcuNzMwNDQwNSAyNS4yMjc0MTcsMzcuNzMwNDQwNSBDMTcuODQzMDU4NiwzNy43MzA0NDA1IDkuNDMzOTE5NjYsMzcuNzMwNDQwNSAwLDM3LjczMDQ0MDUgWiIgaWQ9IlBhdGgtMTkiIGZpbGw9IiMzNzkzRUYiPjwvcGF0aD4KICAgICAgICAgICAgPC9nPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+' > </img>
+Created in <span style='font-weight:600;margin-left:4px;'>Deepnote</span></a>
+

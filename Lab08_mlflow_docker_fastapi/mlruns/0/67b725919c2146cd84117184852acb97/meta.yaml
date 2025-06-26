@@ -1,0 +1,17 @@
+artifact_uri: file:///home/franmal/1U/Lab/Labs/Lab8/mlruns/0/67b725919c2146cd84117184852acb97/artifacts
+end_time: 1749242636074
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 67b725919c2146cd84117184852acb97
+run_name: 'XGB con params = {''n_estimators'': 989, ''max_depth'': 10, ''max_leaves'':
+  61, ''min_child_weight'': 3, ''learning_rate'': 0.09125979136267746, ''reg_alpha'':
+  0.8493183253038847, ''reg_lambda'': 0.9415391514581093}'
+run_uuid: 67b725919c2146cd84117184852acb97
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749242632367
+status: 3
+tags: []
+user_id: franmal

@@ -1,0 +1,15 @@
+artifact_uri: file:///home/franmal/1U/Lab/Labs/Lab8/mlruns/448661760935752624/ae3f72e367d54ab7bae06d525cefe3bd/artifacts
+end_time: 1749242823027
+entry_point_name: ''
+experiment_id: '448661760935752624'
+lifecycle_stage: active
+run_id: ae3f72e367d54ab7bae06d525cefe3bd
+run_name: parent_run para lab8
+run_uuid: ae3f72e367d54ab7bae06d525cefe3bd
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1749242503818
+status: 4
+tags: []
+user_id: franmal
