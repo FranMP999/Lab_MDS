@@ -5,6 +5,7 @@ __pycache__/
 env/
 venv/
 lab_env/
+*mlflow/
 
 *.txt
 *.csv
@@ -15,6 +16,8 @@ lab_env/
 *.mp4
 *.csv
 *.parquet
+*.pkl
+*.joblib
 
 *.rar
 *.zip
